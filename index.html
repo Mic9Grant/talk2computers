@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome to Computers — A Field Manual for the Command Line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#eaeef2; --panel:#f4f6f9; --panel-2:#e1e7ee;
+  --ink:#161a22; --ink-soft:#39414f; --muted:#6c7682; --line:#cdd5de;
+  --blue:#1f47c4; --blue-deep:#15225e; --blue-tint:#e6ebfb;
+  --amber:#d9760f; --amber-tint:#fbeede;
+  --green:#1f9d57; --green-tint:#e2f3e9; --red:#cf3a3a; --red-tint:#fae3e3;
+  --console:#11141b; --console-2:#171b24; --console-line:#283042;
+  --console-text:#cdd6e6; --console-dim:#6b7689; --console-green:#5be08a;
+  --console-blue:#5fa8ff; --console-amber:#ffb454;
+  --r:10px; --shadow:0 1px 0 rgba(22,26,34,.04),0 14px 32px -22px rgba(22,26,34,.5);
+  --fdisp:'Space Grotesk',system-ui,sans-serif;
+  --fbody:'Inter',system-ui,-apple-system,sans-serif;
+  --fmono:'JetBrains Mono',ui-monospace,'Courier New',monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--fbody);
+  font-size:16px;line-height:1.65;
+  background-image:linear-gradient(rgba(31,71,196,.035) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(31,71,196,.035) 1px,transparent 1px);
+  background-size:26px 26px;
+}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- LAYOUT ---------- */
+.shell{display:grid;grid-template-columns:300px 1fr;min-height:100vh}
+.sidebar{
+  position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+  background:var(--blue-deep);color:#dfe5f5;padding:30px 22px;
+  border-right:1px solid #0d1640;
+}
+.sb-kicker{font-family:var(--fmono);font-size:.62rem;letter-spacing:.28em;
+  text-transform:uppercase;color:#9fb0e8;margin-bottom:8px}
+.sb-title{font-family:var(--fdisp);font-weight:700;font-size:1.5rem;line-height:1.1;
+  letter-spacing:-.01em;color:#fff;margin:0 0 4px}
+.sb-sub{font-size:.78rem;color:#9aa7d4;margin:0 0 22px}
+.progress-wrap{margin-bottom:22px}
+.progress-label{display:flex;justify-content:space-between;font-family:var(--fmono);
+  font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:#9fb0e8;margin-bottom:7px}
+.progress-bar{height:6px;background:#0e1a52;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:var(--amber);border-radius:99px;
+  transition:width .5s cubic-bezier(.4,0,.2,1)}
+nav.toc{display:flex;flex-direction:column;gap:2px}
+.toc-item{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;
+  cursor:pointer;color:#c5cdec;font-size:.88rem;border:1px solid transparent;text-align:left;
+  background:none;width:100%;font-family:var(--fbody)}
+.toc-item:hover{background:rgba(255,255,255,.05)}
+.toc-item.active{background:#fff;color:var(--blue-deep);font-weight:600;border-color:#fff}
+.toc-num{font-family:var(--fmono);font-size:.7rem;color:#7e8fce;min-width:20px}
+.toc-item.active .toc-num{color:var(--amber)}
+.toc-check{margin-left:auto;width:16px;height:16px;border-radius:50%;border:1.5px solid #46569b;
+  display:grid;place-items:center;font-size:.6rem;flex:0 0 auto}
+.toc-item.done .toc-check{background:var(--green);border-color:var(--green);color:#fff}
+.toc-item.active.done .toc-check{border-color:var(--green)}
+.sb-foot{margin-top:24px;padding-top:18px;border-top:1px solid #2a3a86;
+  font-size:.7rem;color:#8493c8;line-height:1.6}
+
+main{padding:0;min-width:0}
+.topbar{display:none}
+.wrap{max-width:820px;margin:0 auto;padding:54px 40px 90px}
+
+/* ---------- MODULE / TYPE ---------- */
+.module{display:none;animation:rise .45s ease}
+.module.active{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.eyebrow{font-family:var(--fmono);font-size:.68rem;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--blue);display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.eyebrow::before{content:"";width:34px;height:2px;background:var(--amber)}
+h1.mtitle{font-family:var(--fdisp);font-weight:700;font-size:2.5rem;line-height:1.06;
+  letter-spacing:-.02em;margin:0 0 18px}
+.lede{font-size:1.16rem;color:var(--ink-soft);margin:0 0 26px;line-height:1.6}
+h2{font-family:var(--fdisp);font-weight:600;font-size:1.4rem;letter-spacing:-.01em;
+  margin:38px 0 12px;padding-top:6px}
+h3{font-family:var(--fdisp);font-weight:600;font-size:1.07rem;margin:26px 0 8px}
+p{margin:0 0 14px}
+strong{font-weight:600;color:var(--ink)}
+.module ul,.module ol{margin:0 0 16px;padding-left:22px}
+.module li{margin-bottom:7px}
+code{font-family:var(--fmono);font-size:.86em;background:var(--panel-2);
+  padding:.12em .4em;border-radius:5px;color:var(--blue-deep)}
+
+/* ---------- OBJECTIVES ---------- */
+.objectives{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 22px;margin:0 0 30px}
+.objectives h4{font-family:var(--fmono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 12px}
+.objectives ul{list-style:none;padding:0;margin:0}
+.objectives li{padding-left:26px;position:relative;margin-bottom:8px;font-size:.95rem}
+.objectives li::before{content:"→";position:absolute;left:0;color:var(--amber);font-family:var(--fmono)}
+
+/* ---------- COMMAND BLOCKS ---------- */
+.cmd{background:var(--console);border-radius:var(--r);margin:0 0 18px;overflow:hidden;
+  border:1px solid var(--console-line)}
+.cmd-bar{display:flex;align-items:center;gap:7px;padding:9px 14px;background:var(--console-2);
+  border-bottom:1px solid var(--console-line)}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+.cmd-tag{margin-left:auto;font-family:var(--fmono);font-size:.6rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--console-dim)}
+.cmd pre{margin:0;padding:15px 17px;font-family:var(--fmono);font-size:.85rem;line-height:1.7;
+  color:var(--console-text);overflow-x:auto}
+.cmd .pmt{color:var(--console-green)}
+.cmd .cmt{color:var(--console-dim)}
+.cmd .out{color:var(--console-dim)}
+
+/* ---------- CALLOUTS ---------- */
+.note{border-left:3px solid var(--blue);background:var(--blue-tint);padding:15px 18px;
+  border-radius:0 var(--r) var(--r) 0;margin:0 0 18px;font-size:.94rem}
+.note.why{border-color:var(--amber);background:var(--amber-tint)}
+.note.warn{border-color:var(--red);background:var(--red-tint)}
+.note.try{border-color:var(--green);background:var(--green-tint)}
+.note .nt{font-family:var(--fmono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
+  display:block;margin-bottom:6px;color:var(--blue)}
+.note.why .nt{color:var(--amber)}.note.warn .nt{color:var(--red)}.note.try .nt{color:var(--green)}
+.note p:last-child{margin-bottom:0}
+
+/* ---------- DETAILS / DEEP DIVE ---------- */
+details{border:1px solid var(--line);border-radius:var(--r);padding:0;margin:0 0 18px;background:var(--panel)}
+summary{cursor:pointer;padding:14px 18px;font-family:var(--fdisp);font-weight:600;font-size:.98rem;
+  list-style:none;display:flex;align-items:center;gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--fmono);color:var(--amber);font-size:1.1rem;width:14px}
+details[open] summary::before{content:"–"}
+details .body{padding:0 18px 16px;font-size:.93rem;color:var(--ink-soft)}
+
+/* ---------- ANALOGY CARD ---------- */
+.analogy{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;
+  border:1px dashed var(--blue);border-radius:var(--r);padding:16px 18px;margin:0 0 18px;background:#fff}
+.analogy .ic{font-size:1.7rem}
+.analogy .t{font-size:.93rem;color:var(--ink-soft)}
+.analogy .t b{color:var(--blue-deep)}
+
+/* ---------- TABLES ---------- */
+.tbl{width:100%;border-collapse:collapse;margin:0 0 18px;font-size:.88rem;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tbl th{background:var(--blue-deep);color:#fff;text-align:left;padding:10px 13px;font-family:var(--fmono);
+  font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.tbl td{padding:10px 13px;border-top:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:var(--panel)}
+.tbl code{background:var(--panel-2)}
+
+/* ---------- TERMINAL SIM (signature) ---------- */
+.sim{border:1px solid var(--console-line);border-radius:14px;overflow:hidden;margin:8px 0 18px;
+  box-shadow:var(--shadow)}
+.sim-head{background:var(--console-2);padding:11px 16px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--console-line)}
+.sim-head .label{margin-left:auto;font-family:var(--fmono);font-size:.62rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--console-dim)}
+.sim-mission{background:#1a2030;color:var(--console-amber);font-family:var(--fmono);font-size:.74rem;
+  padding:10px 16px;border-bottom:1px solid var(--console-line);display:flex;gap:9px;align-items:flex-start}
+.sim-mission.done{color:var(--console-green)}
+.sim-screen{background:var(--console);padding:14px 16px;height:300px;overflow-y:auto;
+  font-family:var(--fmono);font-size:.82rem;line-height:1.65;color:var(--console-text)}
+.sim-screen .ln{white-space:pre-wrap;word-break:break-word}
+.sim-screen .echo .p{color:var(--console-green)}
+.sim-screen .err{color:#ff7a7a}
+.sim-screen .ok{color:var(--console-green)}
+.sim-screen .dim{color:var(--console-dim)}
+.sim-screen .dir{color:var(--console-blue)}
+.sim-input{display:flex;align-items:center;background:var(--console);border-top:1px solid var(--console-line);
+  padding:10px 16px;gap:9px}
+.sim-input .ps{font-family:var(--fmono);font-size:.82rem;color:var(--console-green);white-space:nowrap}
+.sim-input input{flex:1;background:none;border:none;outline:none;color:var(--console-text);
+  font-family:var(--fmono);font-size:.82rem;caret-color:var(--console-amber)}
+.sim-hint{font-size:.78rem;color:var(--muted);margin:-8px 0 18px;font-family:var(--fmono)}
+
+/* ---------- QUIZ ---------- */
+.quiz{border:1px solid var(--line);border-radius:var(--r);padding:22px;margin:30px 0 10px;background:#fff}
+.quiz .qkick{font-family:var(--fmono);font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:10px}
+.quiz .q{font-family:var(--fdisp);font-weight:600;font-size:1.05rem;margin:0 0 14px}
+.opt{display:block;width:100%;text-align:left;padding:12px 15px;margin-bottom:9px;border:1px solid var(--line);
+  border-radius:8px;background:var(--panel);cursor:pointer;font-family:var(--fbody);font-size:.93rem;
+  color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--blue)}
+.opt.correct{background:var(--green-tint);border-color:var(--green);color:#0f5e34;font-weight:500}
+.opt.wrong{background:var(--red-tint);border-color:var(--red);color:#8a2222}
+.opt:disabled{cursor:default}
+.quiz-why{margin:6px 0 0;padding:13px 15px;border-radius:8px;background:var(--blue-tint);
+  font-size:.9rem;color:var(--blue-deep)}
+.quiz-why[hidden]{display:none}
+
+/* ---------- FOOT NAV ---------- */
+.foot{display:flex;align-items:center;gap:14px;margin-top:44px;padding-top:26px;border-top:1px solid var(--line)}
+.btn{font-family:var(--fdisp);font-weight:600;font-size:.92rem;padding:12px 22px;border-radius:9px;
+  border:1px solid var(--blue);cursor:pointer;background:none;color:var(--blue);transition:.2s}
+.btn:hover{background:var(--blue-tint)}
+.btn.solid{background:var(--blue);color:#fff}
+.btn.solid:hover{background:var(--blue-deep)}
+.btn.done{background:var(--green);border-color:var(--green);color:#fff}
+.btn-next{margin-left:auto}
+
+/* glossary */
+.gloss dt{font-family:var(--fmono);font-weight:700;color:var(--blue-deep);margin-top:16px;font-size:.92rem}
+.gloss dd{margin:3px 0 0;color:var(--ink-soft);font-size:.94rem}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;width:84%;max-width:330px;z-index:50;transform:translateX(-100%);
+    transition:transform .3s ease;height:100vh}
+  .sidebar.open{transform:none}
+  .topbar{display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:40;
+    background:var(--blue-deep);color:#fff;padding:13px 18px}
+  .menu-btn{background:rgba(255,255,255,.12);border:none;color:#fff;font-size:1.2rem;width:40px;height:40px;
+    border-radius:8px;cursor:pointer;font-family:var(--fmono)}
+  .topbar .tt{font-family:var(--fdisp);font-weight:700;font-size:1rem}
+  .topbar .tp{margin-left:auto;font-family:var(--fmono);font-size:.7rem;color:#9fb0e8}
+  .wrap{padding:32px 22px 70px}
+  h1.mtitle{font-size:1.9rem}
+  .scrim{position:fixed;inset:0;background:rgba(10,15,40,.5);z-index:45;opacity:0;pointer-events:none;transition:.3s}
+  .scrim.show{opacity:1;pointer-events:auto}
+}
+@media(min-width:901px){.scrim{display:none}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="Open menu">≡</button>
+  <span class="tt">Welcome to Computers</span>
+  <span class="tp" id="topProg">0%</span>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-kicker">Field Manual · v1</div>
+    <h2 class="sb-title">Welcome to Computers</h2>
+    <p class="sb-sub">Learn the command line by setting up a real project — no prior experience needed.</p>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Your progress</span><span id="progPct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+    </div>
+    <nav class="toc" id="toc"></nav>
+    <div class="sb-foot">
+      A companion guide built from one real beginner's setup session — every wrong turn and every "oh, that makes sense" moment, turned into a lesson.
+    </div>
+  </aside>
+
+  <main>
+    <div class="wrap">
+
+    <!-- ============ MODULE 0 ============ -->
+    <section class="module active" id="m0" data-num="00" data-title="Orientation">
+      <div class="eyebrow">Module 00 · Start here</div>
+      <h1 class="mtitle">Two ways to talk to a computer</h1>
+      <p class="lede">You already know one way: you point and click. This course teaches the other way — typing commands — by walking through the real setup of a small app, mistakes and all.</p>
+
+      <div class="objectives">
+        <h4>By the end of this module you'll know</h4>
+        <ul>
+          <li>The difference between clicking and typing commands</li>
+          <li>Why typed commands exist when buttons feel easier</li>
+          <li>What project we'll set up, and how the course is organized</li>
+        </ul>
+      </div>
+
+      <p>Most of the time you tell a computer what to do by <strong>pointing at pictures</strong>: double-click an icon, drag a file, tap a button. That's a graphical interface, and it's friendly — but you can only do the things someone drew a button for.</p>
+      <p>The other way is to <strong>type words</strong>. You type a command, press Enter, and the computer does it and types back. It's a text conversation instead of a point-and-click one. That's what this whole course is about, because it's how nearly every developer tool expects to be used.</p>
+
+      <div class="analogy">
+        <div class="ic">🗣️</div>
+        <div class="t">Think of clicking as <b>ordering from a picture menu</b> — easy, but limited to the photos on the wall. Typing commands is <b>speaking the language</b> — once you know a few words, you can ask for anything.</div>
+      </div>
+
+      <h2>Why bother, if buttons are easier?</h2>
+      <p>Three reasons worth keeping in mind as you go:</p>
+      <ul>
+        <li><strong>Precision.</strong> A command says exactly what you want, with no ambiguity.</li>
+        <li><strong>Automation.</strong> Typed commands can be saved, repeated, and chained. You can't easily record "click here, then here" — but you can save a list of commands and re-run it forever.</li>
+        <li><strong>It's where the tools live.</strong> Python, <code>pip</code>, and the kind of app we'll install were <em>built</em> to be driven by typed commands. Often there is no button — the command line is the front door.</li>
+      </ul>
+
+      <div class="note">
+        <span class="nt">Our running project</span>
+        <p>Throughout the course we'll set up <strong>"Danvion"</strong>, a small dashboard app that tracks how long you spend in each program on your computer. You don't need to understand its code — it's just a realistic excuse to learn the setup skills every project shares: navigate to a folder, install some packages, and run it.</p>
+      </div>
+
+      <h2>How this manual works</h2>
+      <p>Seven short modules, in order. Each one has a clear goal, plain-English explanations with analogies, real commands, and a quick knowledge check. There's a hands-on <strong>practice terminal</strong> in Module 02 you can type into safely, plus a glossary and a printable cheat sheet at the end. Mark each module complete to fill your progress bar.</p>
+
+      <div class="foot">
+        <button class="btn done" data-complete>✓ Marked complete</button>
+        <button class="btn solid btn-next" data-next>Begin: The terminal →</button>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 1 ============ -->
+    <section class="module" id="m1" data-num="01" data-title="Terminal &amp; Shell">
+      <div class="eyebrow">Module 01 · The tools</div>
+      <h1 class="mtitle">The terminal and the shell</h1>
+      <p class="lede">The "black window where you type" has two parts with two names. Getting them straight now will make every later step easier to follow.</p>
+
+      <div class="objectives">
+        <h4>By the end of this module you'll know</h4>
+        <ul>
+          <li>What a terminal is vs. what a shell is</li>
+          <li>The common shells: bash, zsh, PowerShell, Command Prompt</li>
+          <li>How to open a terminal on Windows, macOS, and Linux</li>
+        </ul>
+      </div>
+
+      <h2>Terminal = the window. Shell = the worker inside it.</h2>
+      <p>It helps to split the thing in two:</p>
+      <ul>
+        <li>The <strong>terminal</strong> is the <em>window</em> — the app that gives you a place to type. On macOS it's literally called "Terminal"; on Windows it's "PowerShell," "Command Prompt," or "Windows Terminal"; on Linux it's often "GNOME Terminal" or "Konsole."</li>
+        <li>The <strong>shell</strong> is the <em>program running inside that window</em> that actually reads your commands and carries them out. Common shells are <code>bash</code>, <code>zsh</code> (macOS's default), <code>PowerShell</code>, and <code>cmd</code> (Command Prompt).</li>
+      </ul>
+
+      <div class="analogy">
+        <div class="ic">☎️</div>
+        <div class="t">The terminal is the <b>telephone handset</b>; the shell is the <b>person on the other end</b> who understands what you're asking for. You speak into the handset, but it's the person who actually does things.</div>
+      </div>
+
+      <p>For most of this course you don't need to keep them perfectly separate — "open a terminal" just means "open that window where I can type." But the distinction matters in Module 03, where the <em>specific shell</em> you're using (PowerShell vs. Command Prompt) changes what works.</p>
+
+      <details>
+        <summary>Deep dive: why does this even exist?</summary>
+        <div class="body">
+          <p>The terminal is older than windows-and-icons. In the 1970s, before graphical screens existed, people talked to computers entirely through text on a printer-like device called a <em>teletype</em> — that's where the abbreviation "tty" you sometimes see comes from. The graphical desktop was layered on top later. The command line stuck around because it's so precise and automatable, not because anyone forgot to replace it.</p>
+        </div>
+      </details>
+
+      <h2>Opening a terminal</h2>
+      <table class="tbl">
+        <tr><th>System</th><th>How to open it</th></tr>
+        <tr><td><strong>Windows</strong></td><td>Press <code>⊞ Win</code>, type <code>powershell</code> or <code>terminal</code>, press Enter. (More on Windows shells in Module 03.)</td></tr>
+        <tr><td><strong>macOS</strong></td><td>Press <code>⌘ Cmd + Space</code>, type <code>Terminal</code>, press Enter.</td></tr>
+        <tr><td><strong>Linux</strong></td><td>Often <code>Ctrl + Alt + T</code>, or search your apps for "Terminal."</td></tr>
+      </table>
+
+      <div class="quiz" data-quiz>
+        <div class="qkick">Knowledge check</div>
+        <p class="q">You open "PowerShell" and type a command. Which part is the <em>shell</em>?</p>
+        <button class="opt">The PowerShell window itself</button>
+        <button class="opt" data-correct>The program reading and running your command</button>
+        <button class="opt">The keyboard you typed on</button>
+        <p class="quiz-why" hidden>The <strong>shell</strong> is the worker that interprets commands (here, PowerShell-the-program). The window it appears in is the terminal. They share a name in this case, which is exactly why the two ideas are worth separating.</p>
+      </div>
+
+      <div class="foot">
+        <button class="btn" data-complete>Mark complete</button>
+        <button class="btn solid btn-next" data-next>Next: Finding your way →</button>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 2 ============ -->
+    <section class="module" id="m2" data-num="02" data-title="Navigation &amp; Paths">
+      <div class="eyebrow">Module 02 · The core skill</div>
+      <h1 class="mtitle">Where am I? Folders, paths &amp; <code>cd</code></h1>
+      <p class="lede">This is the single most important idea in the whole course. Once "which folder am I standing in?" clicks, half of all beginner errors explain themselves.</p>
+
+      <div class="objectives">
+        <h4>By the end of this module you'll know</h4>
+        <ul>
+          <li>How files are organized as a tree, and what the "current folder" means</li>
+          <li><code>pwd</code>, <code>ls</code>/<code>dir</code>, and <code>cd</code> — your three core commands</li>
+          <li>Relative vs. absolute paths, and how to read two famous error situations</li>
+        </ul>
+      </div>
+
+      <h2>Your files are a tree, and you're standing in one branch</h2>
+      <p>Your files aren't in one big pile. They live in a <strong>tree</strong> of folders inside folders. ("Folder" and "directory" mean the same thing — "directory" is just the older, more technical word.) Your home folder holds <code>Downloads</code>, which might hold a <code>danvion</code> folder, which holds <code>app.py</code> and a <code>templates</code> folder, and so on.</p>
+      <p>Here's the key part: <strong>in a terminal, you are always "standing" somewhere in that tree.</strong> The shell tracks one folder you're currently <em>in</em>, called the <strong>current working directory</strong>. Everything you type is interpreted relative to that folder unless you say otherwise.</p>
+
+      <div class="analogy">
+        <div class="ic">🏠</div>
+        <div class="t">The current working directory is <b>the room you're standing in</b> inside a big building. Say "grab the spoon" in the kitchen and you mean the kitchen's spoon — you don't recite the house's full address every time. The shell works the same way: commands act on <b>the room you're in</b>.</div>
+      </div>
+
+      <h2>Three commands to look around and move</h2>
+      <table class="tbl">
+        <tr><th>Goal</th><th>Windows</th><th>macOS / Linux</th></tr>
+        <tr><td>Where am I?</td><td><code>pwd</code></td><td><code>pwd</code></td></tr>
+        <tr><td>What's in this room?</td><td><code>dir</code></td><td><code>ls</code></td></tr>
+        <tr><td>Walk into a folder</td><td><code>cd name</code></td><td><code>cd name</code></td></tr>
+        <tr><td>Walk up one level</td><td><code>cd ..</code></td><td><code>cd ..</code></td></tr>
+      </table>
+      <p><code>pwd</code> means "print working directory" — it answers <em>where am I?</em>. <code>dir</code> (Windows) and <code>ls</code> (Mac/Linux) list what's in your current room — think of them as your <strong>flashlight</strong>. And <code>cd</code> means <strong>change directory</strong>: it's the command for walking from one room to another.</p>
+
+      <h2><code>cd</code>, and the two kinds of address</h2>
+      <p><code>cd</code> doesn't open, move, or copy anything — it just changes <em>where you're standing</em>, which changes what your other commands act on. Two ways to tell it where to go:</p>
+      <ul>
+        <li><strong>Relative path</strong> — read from the room you're in. <code>cd danvion</code> means "from here, step into danvion." <code>cd ..</code> means "go up one level." (One dot, <code>.</code>, means "right here.")</li>
+        <li><strong>Absolute path</strong> — the full address from the very top of the tree, so it works no matter where you are now: <code>cd C:\Users\You\Downloads\danvion</code> on Windows, or <code>cd /Users/you/Downloads/danvion</code> on macOS.</li>
+      </ul>
+      <div class="analogy">
+        <div class="ic">🧭</div>
+        <div class="t">A <b>relative</b> path is "two doors down from where I'm standing." An <b>absolute</b> path is the <b>full street address</b>. <code style="font-size:.85em">cd</code> happily accepts either.</div>
+      </div>
+
+      <h2 id="sim-anchor">Your turn: drive a real terminal</h2>
+      <p>This is a safe, simulated Windows shell — it can't touch any real files. You start at the very top of the C: drive. <strong>Your mission: get into the <code>danvion</code> folder and run <code>dir</code> until you can see <code>app.py</code>.</strong> Try <code>dir</code>, <code>cd</code>, <code>cd ..</code>, and <code>pwd</code>. Type <code>help</code> if you're stuck.</p>
+
+      <div class="sim" id="sim1">
+        <div class="sim-head"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="label">Practice Shell — simulated</span></div>
+        <div class="sim-mission" id="sim1-mission"><span>◆</span><span>Mission: starting at <b style="color:inherit">C:\</b>, navigate into the <b style="color:inherit">danvion</b> folder, then run <b style="color:inherit">dir</b> to reveal app.py.</span></div>
+        <div class="sim-screen" id="sim1-screen"></div>
+        <div class="sim-input"><span class="ps" id="sim1-ps">C:\&gt;</span><input id="sim1-in" autocomplete="off" spellcheck="false" placeholder="type a command and press Enter…"></div>
+      </div>
+      <p class="sim-hint">try: dir → cd Users → cd You → cd Downloads → cd danvion → dir</p>
+
+      <h2>Two famous situations, now decoded</h2>
+
+      <h3>1. "<code>dir</code> listed my whole C: drive!"</h3>
+      <p>That's <code>dir</code> working perfectly — it lists <em>whatever room you're standing in</em>. If it showed the whole drive (folders like <code>Program Files</code>, <code>Users</code>, <code>Windows</code>), it's telling you exactly where you are: <strong>the root of C:</strong>, the very top — the building's lobby. You simply haven't walked into your project folder yet. <code>cd</code> into it and run <code>dir</code> again; the listing shrinks to your folder's contents.</p>
+
+      <h3>2. "The system cannot find the path specified."</h3>
+      <p>This is the computer saying: <em>"You named a path, but there's nothing there."</em> Because paths are read relative to the room you're in, it almost always means one of two things: the folder doesn't exist <em>from where you currently are</em>, or you're standing somewhere unexpected. The fix is always the same flashlight: run <code>dir</code> (or <code>ls</code>) to see what's actually around you, then adjust.</p>
+
+      <div class="note try">
+        <span class="nt">Two time-saving tricks (Windows)</span>
+        <p><strong>Skip typing long paths:</strong> type <code>cd</code> and a space, then <em>drag the folder</em> from File Explorer onto the terminal window — it pastes the full path for you.</p>
+        <p><strong>Open a terminal already in the right room:</strong> open the folder in File Explorer, click the address bar, type <code>powershell</code>, press Enter. The terminal opens already standing inside that folder — no <code>cd</code> needed.</p>
+      </div>
+
+      <div class="quiz" data-quiz>
+        <div class="qkick">Knowledge check</div>
+        <p class="q">You run <code>dir</code> and see the entire C: drive. What does that tell you?</p>
+        <button class="opt">The command is broken</button>
+        <button class="opt" data-correct>You're standing at the root of C:, not inside your project folder yet</button>
+        <button class="opt">Your project folder was deleted</button>
+        <p class="quiz-why" hidden><code>dir</code> always lists your <em>current</em> folder. Seeing the whole drive means your current folder <em>is</em> the top of the drive. Walk into your project with <code>cd</code>, then <code>dir</code> again.</p>
+      </div>
+
+      <div class="foot">
+        <button class="btn" data-complete>Mark complete</button>
+        <button class="btn solid btn-next" data-next>Next: Running vs. opening →</button>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 3 ============ -->
+    <section class="module" id="m3" data-num="03" data-title="Running vs Opening">
+      <div class="eyebrow">Module 03 · A subtle trap</div>
+      <h1 class="mtitle">Running a script vs. opening it</h1>
+      <p class="lede">A surprising number of "it asked me which app to use and Notepad popped open" moments come down to one distinction: running a file versus opening it as a document.</p>
+
+      <div class="objectives">
+        <h4>By the end of this module you'll know</h4>
+        <ul>
+          <li>Why a script can open in Notepad instead of doing anything</li>
+          <li>How to tell Command Prompt and PowerShell apart at a glance</li>
+          <li>What that scary block of gibberish at the bottom of a script is</li>
+        </ul>
+      </div>
+
+      <h2>Cooking the recipe vs. reading the recipe</h2>
+      <p>A script file — like a <code>.ps1</code> (PowerShell) or <code>.bat</code> (Command Prompt) file — is a list of instructions <em>meant to be run by a shell</em>.</p>
+      <div class="analogy">
+        <div class="ic">📋</div>
+        <div class="t"><b>Running</b> a script is cooking the recipe. <b>Opening</b> it (e.g. double-clicking, or letting Windows "open with…") just shows you the recipe <b>written on paper</b> — nothing gets cooked.</div>
+      </div>
+      <p>So when you double-click a <code>.ps1</code> and Windows asks <em>"which app do you want to use?"</em>, then opens it in Notepad — nothing went wrong and nothing bad happened. Windows just didn't know to <em>run</em> it, so it fell back to <em>opening</em> it as text. You saw the recipe, not the meal.</p>
+
+      <div class="note why">
+        <span class="nt">Why did that happen?</span>
+        <p>Usually because you were in <strong>Command Prompt</strong>, which doesn't speak PowerShell. Hand <code>cmd</code> a <code>.ps1</code> and it shrugs and tries the "open file" route — triggering that app-picker dialog. The lesson: <strong>scripts get <em>run</em> by a terminal; double-clicking just shows you the text.</strong></p>
+      </div>
+
+      <h2>Which shell am I in? Read the prompt.</h2>
+      <p>Command Prompt and PowerShell look similar but behave differently. Tell them apart by the very start of the prompt line:</p>
+      <div class="cmd"><div class="cmd-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="cmd-tag">prompts compared</span></div><pre><span class="cmt">:: Command Prompt — no prefix</span>
+C:\Users\You\danvion&gt;
+
+<span class="cmt">:: PowerShell — starts with PS</span>
+PS C:\Users\You\danvion&gt;</pre></div>
+      <p>That little <code>PS</code> is the tell. To run a <code>.ps1</code> activation script you want PowerShell; the surest way to get it is the File-Explorer-address-bar <code>powershell</code> trick from Module 02. In Command Prompt, the equivalent script would end in <code>.bat</code> instead.</p>
+
+      <details>
+        <summary>What was that wall of gibberish at the bottom of the script?</summary>
+        <div class="body">
+          <p>If you opened a real <code>.ps1</code> and saw hundreds of lines of random characters under a line reading <code># SIG #</code>, that's a <strong>digital signature</strong> — a tamper-proof stamp proving the file is the genuine, unmodified official version. It's not code you run, not malware, and nothing you ever need to read or edit. Safe to ignore completely.</p>
+        </div>
+      </details>
+
+      <div class="quiz" data-quiz>
+        <div class="qkick">Knowledge check</div>
+        <p class="q">You double-click <code>Activate.ps1</code> and it opens in Notepad. What happened?</p>
+        <button class="opt" data-correct>Windows opened it as a document instead of running it — nothing broke</button>
+        <button class="opt">The script ran successfully</button>
+        <button class="opt">The file is corrupted and must be re-downloaded</button>
+        <p class="quiz-why" hidden>Opening ≠ running. Notepad showed you the script's text. To actually run it, type it inside <strong>PowerShell</strong> (look for the <code>PS</code> prompt), rather than double-clicking.</p>
+      </div>
+
+      <div class="foot">
+        <button class="btn" data-complete>Mark complete</button>
+        <button class="btn solid btn-next" data-next>Next: Python &amp; packages →</button>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 4 ============ -->
+    <section class="module" id="m4" data-num="04" data-title="Python, pip &amp; Packages">
+      <div class="eyebrow">Module 04 · The toolkit</div>
+      <h1 class="mtitle">Python, packages &amp; <code>pip</code></h1>
+      <p class="lede">Our project is written in Python and relies on code other people wrote. Here's what that means, and the one command that fetches it all.</p>
+
+      <div class="objectives">
+        <h4>By the end of this module you'll know</h4>
+        <ul>
+          <li>What Python is, and <code>python</code> vs <code>py</code> on Windows</li>
+          <li>What a "package" is and why we don't reinvent the wheel</li>
+          <li><code>pip</code> and <code>requirements.txt</code>: installing a project's dependencies</li>
+        </ul>
+      </div>
+
+      <h2>Python, and a Windows wrinkle</h2>
+      <p><strong>Python</strong> is a programming language and the program that runs Python code. You invoke it from the terminal by name. On macOS and Linux that's usually <code>python3</code>. On Windows it's <code>python</code> — <em>except</em> Windows has a common quirk:</p>
+      <div class="note warn">
+        <span class="nt">Windows gotcha</span>
+        <p>Sometimes typing <code>python</code> on Windows pops open the <strong>Microsoft Store</strong> or says it isn't recognized. The more reliable command on Windows is <code>py</code> — the "Python launcher" that ships with the official installer. If <code>python</code> misbehaves, try <code>py</code> instead (e.g. <code>py app.py</code>).</p>
+      </div>
+
+      <h2>Packages: standing on other people's shoulders</h2>
+      <p>A <strong>package</strong> (or "library") is a bundle of pre-written code that solves a common problem, published so anyone can reuse it. Our app uses packages like <code>flask</code> (to run a small web server) and <code>psutil</code> (to read system info). Nobody re-writes those from scratch — you install them.</p>
+      <div class="analogy">
+        <div class="ic">🧱</div>
+        <div class="t">Packages are <b>LEGO bricks other people molded</b>. Instead of inventing a wheel-shaped brick yourself, you grab the one that exists and click it onto your build.</div>
+      </div>
+
+      <h2><code>pip</code> and the shopping list</h2>
+      <p><strong><code>pip</code></strong> is Python's package installer — the tool that downloads packages and sets them up. You can install one by name (<code>pip install flask</code>), but projects usually ship a <strong><code>requirements.txt</code></strong> file: a plain-text shopping list of every package the project needs.</p>
+      <div class="cmd"><div class="cmd-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="cmd-tag">install dependencies</span></div><pre><span class="pmt">PS C:\Users\You\danvion&gt;</span> pip install -r requirements.txt
+<span class="out">Collecting flask...
+Collecting flask-socketio...
+Collecting psutil...
+Successfully installed flask-3.x flask-socketio-5.x psutil-7.x</span></pre></div>
+      <p>Read <code>pip install -r requirements.txt</code> as: <em>"pip, install everything listed in this requirements file."</em> The <code>-r</code> means "read the list from this file." One line installs the whole set.</p>
+      <div class="note">
+        <span class="nt">Note</span>
+        <p>If <code>pip</code> isn't recognized, try <code>pip3</code>, or <code>py -m pip install -r requirements.txt</code> (which means "Python, run your pip tool"). This only works once you're standing in the folder that contains <code>requirements.txt</code> — back to Module 02's golden rule.</p>
+      </div>
+
+      <h2>Then: run the app</h2>
+      <p>With packages installed, you start the program with <code>python app.py</code> (or <code>py app.py</code>). For our project, that launches a small <strong>web server</strong> on your own machine and prints something like <code>Running on http://127.0.0.1:5000</code>. You then open <strong>http://localhost:5000</strong> in a browser to see it.</p>
+      <details>
+        <summary>What do "localhost" and "port 5000" mean?</summary>
+        <div class="body">
+          <p><strong>localhost</strong> means "this very computer" — the server is talking only to you, not the internet. A <strong>port</strong> (here 5000) is like an apartment number at that address, so multiple programs can share one machine without mixing up their mail. Heads-up: on macOS, port 5000 is sometimes taken by AirPlay; if so, the app can be told to use 5001 and you'd open <code>localhost:5001</code> instead.</p>
+        </div>
+      </details>
+
+      <div class="quiz" data-quiz>
+        <div class="qkick">Knowledge check</div>
+        <p class="q">What does <code>pip install -r requirements.txt</code> do?</p>
+        <button class="opt">Runs the app</button>
+        <button class="opt" data-correct>Installs every package listed in the requirements file</button>
+        <button class="opt">Creates a new requirements file</button>
+        <p class="quiz-why" hidden><code>pip</code> is the installer; <code>-r requirements.txt</code> points it at the project's shopping list of packages. It must be run from the folder that contains that file.</p>
+      </div>
+
+      <div class="foot">
+        <button class="btn" data-complete>Mark complete</button>
+        <button class="btn solid btn-next" data-next>Next: Virtual environments →</button>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 5 ============ -->
+    <section class="module" id="m5" data-num="05" data-title="Virtual Environments">
+      <div class="eyebrow">Module 05 · Good hygiene (optional)</div>
+      <h1 class="mtitle">Virtual environments</h1>
+      <p class="lede">A "venv" gives one project its own private toolbox of packages. It's optional — but understanding it explains a confusing command and a common Windows error.</p>
+
+      <div class="objectives">
+        <h4>By the end of this module you'll know</h4>
+        <ul>
+          <li>The problem venvs solve, and why they're optional</li>
+          <li><code>python -m venv venv</code> decoded (why "venv" appears twice)</li>
+          <li>Activation, the <code>(venv)</code> prompt, and the PowerShell execution-policy fix</li>
+        </ul>
+      </div>
+
+      <h2>The problem: clashing versions</h2>
+      <p>By default, <code>pip</code> installs packages into <em>one shared system-wide Python</em>. That's fine until you have a second project. Imagine Project A needs version 1 of a library and Project B needs version 2 — they can't both live in the same shared Python without colliding.</p>
+      <div class="analogy">
+        <div class="ic">🧰</div>
+        <div class="t">A virtual environment is a <b>dedicated toolbox for one project</b>. Whatever you install goes in <em>that</em> box, can't break another project's tools, and if it ever gets messed up you just throw the box away and make a new one.</div>
+      </div>
+
+      <h2>Creating one: why "venv" twice?</h2>
+      <div class="cmd"><div class="cmd-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="cmd-tag">create the toolbox</span></div><pre><span class="pmt">PS C:\Users\You\danvion&gt;</span> python -m venv venv</pre></div>
+      <p>The repetition trips everyone up. Here's each piece:</p>
+      <ul>
+        <li><code>python</code> — run Python.</li>
+        <li><code>-m</code> — "run a built-in <em>module</em> by name," not a file of mine.</li>
+        <li>the first <code>venv</code> — the <strong>name of that built-in tool</strong> (Python's environment-maker).</li>
+        <li>the second <code>venv</code> — an <strong>argument: the folder name to create</strong>. You chose this; by convention it's <code>venv</code>, but <code>python -m venv toolbox</code> would make a folder called <code>toolbox</code>.</li>
+      </ul>
+      <p>So: <em>"Python, run your venv tool, and build a new environment in a folder called venv."</em> Two different things that happen to share a name — one is the tool, one is the folder. You run this <strong>once</strong>, ever.</p>
+
+      <h2>Activating it</h2>
+      <p>Creating the toolbox doesn't make your terminal <em>use</em> it. <strong>Activating</strong> flips your current terminal over to the project's private Python.</p>
+      <table class="tbl">
+        <tr><th>System</th><th>Activate command</th></tr>
+        <tr><td>Windows (PowerShell)</td><td><code>venv\Scripts\Activate.ps1</code></td></tr>
+        <tr><td>Windows (Command Prompt)</td><td><code>venv\Scripts\activate.bat</code></td></tr>
+        <tr><td>macOS / Linux</td><td><code>source venv/bin/activate</code></td></tr>
+      </table>
+      <p>Activation doesn't move any files — it just adjusts your <em>current</em> terminal so that <code>python</code> and <code>pip</code> point at the venv's copies. (Under the hood it puts the venv at the front of your <strong>PATH</strong>, the list of places the shell looks for programs.) You'll know it worked because your prompt gains a <code>(venv)</code> tag:</p>
+      <div class="cmd"><div class="cmd-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="cmd-tag">activated</span></div><pre><span class="out">(venv)</span> <span class="pmt">PS C:\Users\You\danvion&gt;</span></pre></div>
+      <p>Type <code>deactivate</code> to step back out. Activation only lasts for that one terminal window — open a new one and you'd activate again (but you never re-create the venv).</p>
+
+      <div class="note warn">
+        <span class="nt">The #1 Windows snag</span>
+        <p>PowerShell often refuses to run scripts by default — you'll see a red <em>"running scripts is disabled on this system."</em> That's its <strong>execution policy</strong> protecting you. To allow your own local scripts, run this once, then re-try activation:</p>
+        <p><code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code></p>
+        <p>In plain terms: "for my account only, allow scripts that are local or properly signed." It's a standard, reasonable setting.</p>
+      </div>
+
+      <div class="note try">
+        <span class="nt">Honest advice</span>
+        <p>The virtual environment is <strong>optional</strong>. If it's fighting you, skip it entirely — run <code>pip install -r requirements.txt</code> and <code>python app.py</code> directly, and the app works exactly the same. For a single small project, skipping it is a perfectly reasonable choice.</p>
+      </div>
+
+      <div class="quiz" data-quiz>
+        <div class="qkick">Knowledge check</div>
+        <p class="q">In <code>python -m venv venv</code>, what is the <em>second</em> "venv"?</p>
+        <button class="opt">A typo</button>
+        <button class="opt">The name of the Python module being run</button>
+        <button class="opt" data-correct>The name of the folder to create for the new environment</button>
+        <p class="quiz-why" hidden>First <code>venv</code> = the built-in tool (run via <code>-m</code>). Second <code>venv</code> = the folder name you're asking it to create. You could have written any name there.</p>
+      </div>
+
+      <div class="foot">
+        <button class="btn" data-complete>Mark complete</button>
+        <button class="btn solid btn-next" data-next>Next: Putting it together →</button>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 6 ============ -->
+    <section class="module" id="m6" data-num="06" data-title="Full Setup &amp; Fixes">
+      <div class="eyebrow">Module 06 · The whole workflow</div>
+      <h1 class="mtitle">Putting it all together</h1>
+      <p class="lede">Every skill from the course, assembled into the real start-to-finish setup — plus a troubleshooting playbook for when something goes sideways.</p>
+
+      <div class="objectives">
+        <h4>By the end of this module you'll know</h4>
+        <ul>
+          <li>The complete setup sequence, in order</li>
+          <li>Why folder layout (the <code>templates</code> rule) matters</li>
+          <li>A fast lookup table for the common errors</li>
+        </ul>
+      </div>
+
+      <h2>The full sequence</h2>
+      <ol>
+        <li><strong>Arrange the files.</strong> Put <code>app.py</code> and <code>requirements.txt</code> in a folder, and place <code>index.html</code> inside a sub-folder named exactly <code>templates</code>. The app looks for that folder by name — get it wrong and the page won't load.</li>
+        <li><strong>Open a terminal in that folder</strong> (File Explorer → address bar → <code>powershell</code>). Confirm with <code>dir</code> that you see <code>app.py</code>.</li>
+        <li><strong>(Optional) Create &amp; activate a venv:</strong> <code>python -m venv venv</code> then <code>venv\Scripts\Activate.ps1</code>.</li>
+        <li><strong>Install packages:</strong> <code>pip install -r requirements.txt</code>.</li>
+        <li><strong>Run it:</strong> <code>python app.py</code> (or <code>py app.py</code>). Leave the terminal open.</li>
+        <li><strong>Open</strong> <code>http://localhost:5000</code> in your browser. Press <code>Ctrl + C</code> in the terminal to stop.</li>
+      </ol>
+
+      <div class="cmd"><div class="cmd-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="cmd-tag">the whole thing</span></div><pre><span class="cmt"># standing inside the project folder…</span>
+<span class="pmt">PS …\danvion&gt;</span> dir            <span class="cmt"># see app.py + templates? good.</span>
+<span class="pmt">PS …\danvion&gt;</span> pip install -r requirements.txt
+<span class="pmt">PS …\danvion&gt;</span> python app.py
+<span class="out">Running on http://127.0.0.1:5000</span>
+<span class="cmt"># now open localhost:5000 in your browser</span></pre></div>
+
+      <h2>Troubleshooting playbook</h2>
+      <table class="tbl">
+        <tr><th>Symptom</th><th>Likely cause &amp; fix</th></tr>
+        <tr><td>"cannot find the path specified"</td><td>You're in the wrong folder, or it doesn't exist. Run <code>dir</code>/<code>ls</code> to see where you are; <code>cd</code> to the right place.</td></tr>
+        <tr><td><code>dir</code> shows the whole drive</td><td>You're at the root. <code>cd</code> into your project folder, then <code>dir</code> again.</td></tr>
+        <tr><td>Script opens in Notepad / "choose an app"</td><td>You're in Command Prompt, or you double-clicked it. Run it inside PowerShell (look for <code>PS</code>).</td></tr>
+        <tr><td>"running scripts is disabled"</td><td>PowerShell execution policy. Run <code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code>, then retry.</td></tr>
+        <tr><td><code>python</code> opens the Store / not recognized</td><td>Use <code>py</code> instead (e.g. <code>py app.py</code>), or reinstall Python from python.org.</td></tr>
+        <tr><td>Port 5000 already in use (macOS)</td><td>AirPlay may hold it. Use port 5001 and open <code>localhost:5001</code>.</td></tr>
+        <tr><td>The tracker shows every app as "Unknown"</td><td>Permission/tooling: macOS needs Accessibility access; Linux needs <code>xdotool</code>+<code>xprintidle</code>; Wayland can't expose the active window.</td></tr>
+      </table>
+
+      <details>
+        <summary>Appendix: platform notes for this specific app</summary>
+        <div class="body">
+          <p><strong>Windows</strong> works out of the box. <strong>macOS</strong> reads the active app via the system, and the first run may prompt your terminal for <em>Accessibility</em> permission (System Settings → Privacy &amp; Security → Accessibility) — grant it or app names come back blank. <strong>Linux (X11)</strong> needs <code>sudo apt install xdotool xprintidle</code>; on a Wayland session no app can read the active window, so values stay "Unknown." All usage data lives in a local <code>usage_data.json</code> file next to <code>app.py</code> — delete it to wipe history.</p>
+        </div>
+      </details>
+
+      <div class="note try">
+        <span class="nt">You did it</span>
+        <p>That's the entire toolkit: open a terminal, find your folder, install dependencies, run the program. These same steps set up almost any project you'll meet — the project changes, the muscle memory doesn't.</p>
+      </div>
+
+      <div class="foot">
+        <button class="btn" data-complete>Mark complete</button>
+        <button class="btn solid btn-next" data-next>Reference: glossary &amp; cheat sheet →</button>
+      </div>
+    </section>
+
+    <!-- ============ REFERENCE ============ -->
+    <section class="module" id="ref" data-num="★" data-title="Reference">
+      <div class="eyebrow">Reference · Keep this handy</div>
+      <h1 class="mtitle">Glossary &amp; cheat sheet</h1>
+      <p class="lede">A quick lookup for the terms and the side-by-side commands across systems.</p>
+
+      <h2>Command cheat sheet</h2>
+      <table class="tbl">
+        <tr><th>What you want</th><th>Windows (cmd / PowerShell)</th><th>macOS / Linux</th></tr>
+        <tr><td>Where am I?</td><td><code>cd</code> (alone) / <code>pwd</code></td><td><code>pwd</code></td></tr>
+        <tr><td>List this folder</td><td><code>dir</code></td><td><code>ls</code></td></tr>
+        <tr><td>Enter a folder</td><td><code>cd name</code></td><td><code>cd name</code></td></tr>
+        <tr><td>Go up one level</td><td><code>cd ..</code></td><td><code>cd ..</code></td></tr>
+        <tr><td>Clear the screen</td><td><code>cls</code></td><td><code>clear</code></td></tr>
+        <tr><td>Run Python</td><td><code>py</code> or <code>python</code></td><td><code>python3</code></td></tr>
+        <tr><td>Install packages</td><td><code>pip install -r requirements.txt</code></td><td><code>pip install -r requirements.txt</code></td></tr>
+        <tr><td>Make a venv</td><td><code>python -m venv venv</code></td><td><code>python3 -m venv venv</code></td></tr>
+        <tr><td>Activate venv</td><td><code>venv\Scripts\Activate.ps1</code></td><td><code>source venv/bin/activate</code></td></tr>
+        <tr><td>Stop a running program</td><td><code>Ctrl + C</code></td><td><code>Ctrl + C</code></td></tr>
+      </table>
+
+      <h2>Glossary</h2>
+      <dl class="gloss">
+        <dt>Terminal</dt><dd>The window/app where you type commands.</dd>
+        <dt>Shell</dt><dd>The program inside the terminal that reads and runs your commands (bash, zsh, PowerShell, cmd).</dd>
+        <dt>Command Prompt (cmd)</dt><dd>Windows' older shell. Can't run PowerShell <code>.ps1</code> scripts.</dd>
+        <dt>PowerShell</dt><dd>Windows' modern shell; its prompt starts with <code>PS</code>. Runs <code>.ps1</code> scripts.</dd>
+        <dt>Directory</dt><dd>A folder. "Directory" is the technical term.</dd>
+        <dt>Current working directory</dt><dd>The folder your terminal is currently "standing in." Commands act here by default.</dd>
+        <dt>Path</dt><dd>An address for a file or folder. <em>Relative</em> = from where you are; <em>absolute</em> = the full address from the top.</dd>
+        <dt>Package / library</dt><dd>Reusable code someone else published that you install into your project.</dd>
+        <dt>pip</dt><dd>Python's package installer.</dd>
+        <dt>requirements.txt</dt><dd>A text list of the packages a project needs; install all with <code>pip install -r</code>.</dd>
+        <dt>Virtual environment (venv)</dt><dd>An isolated, per-project toolbox of Python packages.</dd>
+        <dt>PATH</dt><dd>The list of folders the shell searches to find programs you name.</dd>
+        <dt>Execution policy</dt><dd>A PowerShell security setting governing whether scripts may run.</dd>
+        <dt>Server</dt><dd>A program that waits for requests and responds — here, the app serving a web page.</dd>
+        <dt>localhost</dt><dd>"This computer." A server on localhost is reachable only from your own machine.</dd>
+        <dt>Port</dt><dd>A numbered channel on a machine (e.g. 5000) so multiple programs can share one address.</dd>
+        <dt>Digital signature</dt><dd>A tamper-proof stamp (the <code># SIG #</code> block) proving a script is the genuine, unmodified file.</dd>
+      </dl>
+
+      <div class="foot">
+        <button class="btn" data-complete>Mark complete</button>
+        <button class="btn solid btn-next" data-restart>↺ Back to start</button>
+      </div>
+    </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var modules = Array.prototype.slice.call(document.querySelectorAll('.module'));
+  var toc = document.getElementById('toc');
+  var completed = {};      // in-memory progress (resets on reload)
+  var order = modules.map(function(m){return m.id;});
+
+  /* ---- Build sidebar ---- */
+  modules.forEach(function(m){
+    var btn = document.createElement('button');
+    btn.className = 'toc-item';
+    btn.dataset.target = m.id;
+    btn.innerHTML = '<span class="toc-num">'+m.dataset.num+'</span>'+
+                    '<span class="toc-label">'+m.dataset.title+'</span>'+
+                    '<span class="toc-check">✓</span>';
+    btn.addEventListener('click', function(){ go(m.id); closeDrawer(); });
+    toc.appendChild(btn);
+  });
+  var tocItems = Array.prototype.slice.call(toc.children);
+
+  function go(id){
+    modules.forEach(function(m){ m.classList.toggle('active', m.id===id); });
+    tocItems.forEach(function(t){ t.classList.toggle('active', t.dataset.target===id); });
+    var main = document.querySelector('main');
+    if(main){ main.scrollIntoView({block:'start'}); }
+    window.scrollTo(0,0);
+  }
+
+  function updateProgress(){
+    var done = Object.keys(completed).length;
+    var pct = Math.round(done/modules.length*100);
+    document.getElementById('progFill').style.width = pct+'%';
+    document.getElementById('progPct').textContent = pct+'%';
+    var tp = document.getElementById('topProg'); if(tp) tp.textContent = pct+'%';
+    tocItems.forEach(function(t){ t.classList.toggle('done', !!completed[t.dataset.target]); });
+  }
+
+  function markDone(id){
+    completed[id]=true; updateProgress();
+    // reflect on the button
+    var sec=document.getElementById(id);
+    var b=sec.querySelector('[data-complete]');
+    if(b){ b.classList.add('done'); b.textContent='✓ Completed'; }
+  }
+
+  /* ---- Footer buttons (complete / next / restart) ---- */
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if(t.matches('[data-complete]')){
+      var sec = t.closest('.module'); markDone(sec.id);
+    } else if(t.matches('[data-next]')){
+      var sec2 = t.closest('.module'); markDone(sec2.id);
+      var i = order.indexOf(sec2.id);
+      if(i < order.length-1) go(order[i+1]);
+    } else if(t.matches('[data-restart]')){
+      go('m0');
+    }
+  });
+
+  /* ---- Quizzes ---- */
+  Array.prototype.slice.call(document.querySelectorAll('[data-quiz]')).forEach(function(q){
+    var opts = Array.prototype.slice.call(q.querySelectorAll('.opt'));
+    var why = q.querySelector('.quiz-why');
+    opts.forEach(function(opt){
+      opt.addEventListener('click', function(){
+        if(q.dataset.answered) return;
+        q.dataset.answered = '1';
+        opts.forEach(function(o){
+          o.disabled = true;
+          if(o.dataset.correct!==undefined) o.classList.add('correct');
+        });
+        if(opt.dataset.correct===undefined) opt.classList.add('wrong');
+        if(why) why.hidden = false;
+      });
+    });
+  });
+
+  /* ---- Mobile drawer ---- */
+  var sidebar=document.getElementById('sidebar'), scrim=document.getElementById('scrim'),
+      menuBtn=document.getElementById('menuBtn');
+  function closeDrawer(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+  if(menuBtn){ menuBtn.addEventListener('click', function(){
+    sidebar.classList.toggle('open'); scrim.classList.toggle('show'); }); }
+  if(scrim){ scrim.addEventListener('click', closeDrawer); }
+
+  updateProgress();
+
+  /* ================= TERMINAL SIMULATOR ================= */
+  function makeFS(){
+    return {'C:':{d:1,c:{
+      'Program Files':{d:1,c:{}},
+      'Windows':{d:1,c:{}},
+      'Users':{d:1,c:{
+        'You':{d:1,c:{
+          'Documents':{d:1,c:{}},
+          'Downloads':{d:1,c:{
+            'danvion':{d:1,c:{
+              'app.py':{d:0},
+              'requirements.txt':{d:0},
+              'templates':{d:1,c:{'index.html':{d:0}}}
+            }}
+          }}
+        }}
+      }}
+    }}};
+  }
+
+  function initSim(opts){
+    var screen=document.getElementById(opts.screen),
+        input=document.getElementById(opts.input),
+        psEl=document.getElementById(opts.ps),
+        mission=opts.mission?document.getElementById(opts.mission):null;
+    var fs=makeFS();
+    var cwd=['C:'];           // path array
+    var solved=false;
+
+    function nodeAt(parts){
+      var node=fs[parts[0]]; if(!node) return null;
+      for(var i=1;i<parts.length;i++){
+        if(!node.c||!node.c[parts[i]]) return null;
+        node=node.c[parts[i]];
+      }
+      return node;
+    }
+    function promptStr(){ return cwd.join('\\')+'>'; }
+    function setPrompt(){ psEl.textContent=promptStr(); }
+
+    function print(html,cls){
+      var d=document.createElement('div');
+      d.className='ln'+(cls?' '+cls:'');
+      d.innerHTML=html;
+      screen.appendChild(d);
+      screen.scrollTop=screen.scrollHeight;
+    }
+    function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+    function resolve(arg){
+      // returns new path array or null
+      var parts, base;
+      arg=arg.replace(/\//g,'\\');
+      if(/^[A-Za-z]:/.test(arg)){ base=[arg.slice(0,2).toUpperCase()]; parts=arg.slice(2).split('\\'); }
+      else if(arg.charAt(0)==='\\'){ base=[cwd[0]]; parts=arg.split('\\'); }
+      else { base=cwd.slice(); parts=arg.split('\\'); }
+      parts.forEach(function(p){
+        if(p===''||p==='.') return;
+        if(p==='..'){ if(base.length>1) base.pop(); return; }
+        base.push(p);
+      });
+      // validate
+      var node=nodeAt(base);
+      if(!node || node.d!==1) return null;
+      // normalize casing against tree for nice display
+      return base;
+    }
+
+    function run(raw){
+      var line=raw.trim();
+      print('<span class="echo"><span class="p">'+esc(promptStr())+'</span> '+esc(line)+'</span>');
+      if(line==='') return;
+      var sp=line.indexOf(' ');
+      var cmd=(sp<0?line:line.slice(0,sp)).toLowerCase();
+      var arg=(sp<0?'':line.slice(sp+1)).trim();
+
+      if(cmd==='help'){
+        print('Commands: <span class="dir">dir</span>, <span class="dir">cd &lt;folder&gt;</span>, <span class="dir">cd ..</span>, <span class="dir">cd \\</span>, <span class="dir">pwd</span>, <span class="dir">cls</span>, <span class="dir">help</span>','dim');
+        return;
+      }
+      if(cmd==='cls'||cmd==='clear'){ screen.innerHTML=''; return; }
+      if(cmd==='pwd'){ print(cwd.join('\\')); return; }
+      if(cmd==='dir'||cmd==='ls'){
+        var node=nodeAt(cwd);
+        if(!node||!node.c){ print('(empty)','dim'); return; }
+        var names=Object.keys(node.c);
+        print('Directory of '+cwd.join('\\'),'dim');
+        names.forEach(function(n){
+          if(node.c[n].d===1) print('&lt;DIR&gt;   <span class="dir">'+esc(n)+'</span>');
+          else print('        '+esc(n));
+        });
+        checkWin();
+        return;
+      }
+      if(cmd==='cd'){
+        if(arg===''){ print(cwd.join('\\')); return; }   // cd alone prints path on Windows
+        var dest=resolve(arg);
+        if(!dest){ print('The system cannot find the path specified.','err'); return; }
+        cwd=dest; setPrompt();
+        return;
+      }
+      print("'"+esc(cmd)+"' is not recognized. Type "+'"help"'+" for commands.",'err');
+    }
+
+    function checkWin(){
+      if(solved) return;
+      if(cwd[cwd.length-1]==='danvion'){
+        solved=true;
+        print('★ app.py spotted — mission complete! You navigated the tree like a pro.','ok');
+        if(mission){ mission.classList.add('done');
+          mission.innerHTML='<span>✓</span><span>Mission complete — you found app.py inside danvion.</span>'; }
+      }
+    }
+
+    input.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){ run(input.value); input.value=''; }
+    });
+    // greeting
+    print('Practice shell ready. You are at the top of the C: drive.','dim');
+    print('Type <span class="dir">dir</span> to look around, then <span class="dir">cd</span> into folders. <span class="dir">help</span> for commands.','dim');
+    setPrompt();
+    var simEl=screen.closest('.sim');
+    if(simEl){ simEl.addEventListener('click',function(){ input.focus(); }); }
+  }
+
+  initSim({screen:'sim1-screen',input:'sim1-in',ps:'sim1-ps',mission:'sim1-mission'});
+})();
+</script>
+</body>
+</html>
